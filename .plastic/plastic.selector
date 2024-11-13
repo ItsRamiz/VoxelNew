@@ -1,4 +1,0 @@
-repository "NewVoxell@Zedd7@cloud"
-  path "/"
-    br "/main"
-    co "/main"
