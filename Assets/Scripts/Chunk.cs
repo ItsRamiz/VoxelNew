@@ -10,6 +10,8 @@
         public Vector3 vector2;
         public Vector3 vector3;
 
+        public float x_offset;
+
         private List<Vector3> vertices = new List<Vector3>();
         private List<int> triangles = new List<int>();
         private List<Vector2> uvs = new List<Vector2>();
@@ -34,6 +36,9 @@
             vector1 = World.Instance.vector1;
             vector2 = World.Instance.vector2;
             vector3 = World.Instance.vector3;
+
+            x_offset = World.Instance.x_offset;
+
 
             chunkSize = World.Instance.chunkSize;
 
@@ -101,9 +106,9 @@
 
                         if (voxels[x, y, z].isActive)
                         {
-                            if (IsFaceVisible(x, y + 1, z)) 
+                            if ((IsFaceVisible(x, y + 1, z) || IsFaceVisible(x-1,y+1,z)))
                                 AddFaceData(x, y, z, 0); // Top
-                            if (IsFaceVisible(x, y - 1, z)) 
+                            if (IsFaceVisible(x, y - 1, z) || IsFaceVisible(x+1,y-1,z)) 
                                 AddFaceData(x, y, z, 1); // Bottom
                             if (IsFaceVisible(x - 1, y, z))
                                 AddFaceData(x, y, z, 2); // Left
@@ -141,67 +146,70 @@
             return transformationMatrix.MultiplyPoint3x4(vertex);
         }
 
-        public void AddFaceData(int x, int y, int z, int faceIndex)
+    public void AddFaceData(int x, int y, int z, int faceIndex)
+    {
+        // Calculate the X offset for the current layer (y-axis)
+        float xOffsetForLayer = y * x_offset;
+
+        // Apply the offset to each vertex based on the face index
+        if (faceIndex == 0) // Top Face
         {
-            Vector3 voxelPosition = new Vector3(x, y, z); 
-
-            if (faceIndex == 0) // Top Face
-            {
-                AddTransformedQuad(
-                    new Vector3(x, y + 1, z),
-                    new Vector3(x, y + 1, z + 1),
-                    new Vector3(x + 1, y + 1, z + 1),
-                    new Vector3(x + 1, y + 1, z)
-                );
-            }
-            else if (faceIndex == 1) // Bottom Face
-            {
-                AddTransformedQuad(
-                    new Vector3(x, y, z),
-                    new Vector3(x + 1, y, z),
-                    new Vector3(x + 1, y, z + 1),
-                    new Vector3(x, y, z + 1)
-                );
-            }
-            else if (faceIndex == 2) // Back Face
-            {
-                AddTransformedQuad(
-                    new Vector3(x, y, z),
-                    new Vector3(x, y, z + 1),
-                    new Vector3(x, y + 1, z + 1),
-                    new Vector3(x, y + 1, z)
-                );
-            }
-            else if (faceIndex == 3) // Front Face
-            {
-                AddTransformedQuad(
-                new Vector3(x + 1, y, z),    
-                new Vector3(x + 1, y + 1, z), 
-                new Vector3(x + 1, y + 1, z + 1), 
-                new Vector3(x + 1, y, z + 1)  
-                );
-            }
-            else if (faceIndex == 4) // Left Face
-            {
-                AddTransformedQuad(
-                    new Vector3(x, y, z + 1),
-                    new Vector3(x + 1, y, z + 1),
-                    new Vector3(x + 1, y + 1, z + 1),
-                    new Vector3(x, y+1, z + 1)
-                );
-            }
-            else if (faceIndex == 5) // Right
-            {
-                AddTransformedQuad(
-                    new Vector3(x + 1, y, z),
-                    new Vector3(x, y, z),
-                    new Vector3(x, y + 1, z),
-                    new Vector3(x + 1, y + 1, z)
-                );
-            }
+            AddTransformedQuad(
+                new Vector3(x + xOffsetForLayer, y + 1, z),
+                new Vector3(x + xOffsetForLayer, y + 1, z + 1),
+                new Vector3(x + 1 + xOffsetForLayer, y + 1, z + 1),
+                new Vector3(x + 1 + xOffsetForLayer, y + 1, z)
+            );
         }
+        else if (faceIndex == 1) // Bottom Face
+        {
+            AddTransformedQuad(
+                new Vector3(x + xOffsetForLayer, y, z),
+                new Vector3(x + 1 + xOffsetForLayer, y, z),
+                new Vector3(x + 1 + xOffsetForLayer, y, z + 1),
+                new Vector3(x + xOffsetForLayer, y, z + 1)
+            );
+        }
+        else if (faceIndex == 2) // Back Face
+        {
+            AddTransformedQuad(
+                new Vector3(x + xOffsetForLayer, y, z),
+                new Vector3(x + xOffsetForLayer, y, z + 1),
+                new Vector3(x + xOffsetForLayer, y + 1, z + 1),
+                new Vector3(x + xOffsetForLayer, y + 1, z)
+            );
+        }
+        else if (faceIndex == 3) // Front Face
+        {
+            AddTransformedQuad(
+                new Vector3(x + 1 + xOffsetForLayer, y, z),
+                new Vector3(x + 1 + xOffsetForLayer, y + 1, z),
+                new Vector3(x + 1 + xOffsetForLayer, y + 1, z + 1),
+                new Vector3(x + 1 + xOffsetForLayer, y, z + 1)
+            );
+        }
+        else if (faceIndex == 4) // Left Face
+        {
+            AddTransformedQuad(
+                new Vector3(x + xOffsetForLayer, y, z + 1),
+                new Vector3(x + 1 + xOffsetForLayer, y, z + 1),
+                new Vector3(x + 1 + xOffsetForLayer, y + 1, z + 1),
+                new Vector3(x + xOffsetForLayer, y + 1, z + 1)
+            );
+        }
+        else if (faceIndex == 5) // Right Face
+        {
+            AddTransformedQuad(
+                new Vector3(x + 1 + xOffsetForLayer, y, z),
+                new Vector3(x + xOffsetForLayer, y, z),
+                new Vector3(x + xOffsetForLayer, y + 1, z),
+                new Vector3(x + 1 + xOffsetForLayer, y + 1, z)
+            );
+        }
+    }
 
-        private void AddTransformedQuad(Vector3 v0, Vector3 v1, Vector3 v2, Vector3 v3)
+
+    private void AddTransformedQuad(Vector3 v0, Vector3 v1, Vector3 v2, Vector3 v3)
         {
             vertices.Add(TransformVertex(v0));
             vertices.Add(TransformVertex(v1));
@@ -223,7 +231,7 @@
 
             if (x < 0 || x >= voxels.GetLength(0) || y < 0 || y >= voxels.GetLength(1) || z < 0 || z >= voxels.GetLength(2) || voxels[x,y,z].isActive == false)
             {
-                Debug.LogWarning("Position is out of bounds. R  eturning neighboring voxels.");
+                //Debug.LogWarning("Position is out of bounds. R  eturning neighboring voxels.");
 
                 List<Voxel> neighbors = new List<Voxel>();
 

@@ -511,6 +511,7 @@ MonoBehaviour:
   vector1: {x: 1, y: 0, z: 0}
   vector2: {x: 0.5, y: 1, z: 0}
   vector3: {x: 0, y: 0, z: 1}
+  x_offset: 0
   chunkSize: 5
   chunkOrigin: {x: 0, y: 0, z: 0}
   VoxelMaterial: {fileID: 2100000, guid: 80ba7f3f4e9a9f34f983f75c41b85dca, type: 2}
@@ -848,10 +849,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 30045dc404dc8d04d928273aa9097f15, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  vector1: {x: 0.9, y: 0, z: 0}
-  vector2: {x: 0.8, y: 0.9, z: 0}
-  vector3: {x: 0, y: 0, z: 0.9}
-  chunkSize: 15
+  vector1: {x: 0.8, y: 0, z: 0}
+  vector2: {x: 0.4, y: 0.7, z: 0}
+  vector3: {x: 0, y: 0, z: 0.6}
+  x_offset: 0.4
+  chunkSize: 10
 --- !u!4 &1424515563
 Transform:
   m_ObjectHideFlags: 0
@@ -898,6 +900,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playerCamera: {fileID: 330585545}
   maxRayDistance: 100
+  x_offset: 0
   vector1: {x: 1, y: 0, z: 0}
   vector2: {x: 0.5, y: 1, z: 0}
   vector3: {x: 0, y: 0, z: 1}

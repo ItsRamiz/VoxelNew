@@ -1,9 +1,12 @@
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class PlayerHand : MonoBehaviour
 {
     public Camera playerCamera;
     public float maxRayDistance = 100f;
+
+    public float x_offset;
 
     // Basis vectors for the Makbilit transformation
     public Vector3 vector1;
@@ -15,6 +18,8 @@ public class PlayerHand : MonoBehaviour
         vector1 = World.Instance.vector1;
         vector2 = World.Instance.vector2;
         vector3 = World.Instance.vector3;
+
+        x_offset = World.Instance.x_offset;
     }
 
     void Update()
@@ -36,6 +41,8 @@ public class PlayerHand : MonoBehaviour
 
                 Vector3 hitVectorReverted = CalculateHitPoint(hit.point);
 
+                Debug.Log("Hit Converted = " + hitVectorReverted);
+
                 Vector3 VoxelCordsReverted = CalculateVoxelCords(hitVectorReverted);
 
                 DeactivateVoxel(hit,VoxelCordsReverted);
@@ -56,11 +63,16 @@ public class PlayerHand : MonoBehaviour
 
         Vector3 localVoxelCoords = BInverse.MultiplyPoint3x4(hitPoint);
 
-        return new Vector3(localVoxelCoords.x,localVoxelCoords.y,localVoxelCoords.z);
+        float layer = Mathf.Floor(localVoxelCoords.y); // Determine the layer based on Y coordinate....
+
+        localVoxelCoords.x -= (layer * x_offset); // Subtract the X offset applied during initialization
+
+        return new Vector3(localVoxelCoords.x, localVoxelCoords.y, localVoxelCoords.z);
     }
+
     Vector3 CalculateVoxelCords(Vector3 hitPoint)
     {
-        const float epsilon = 1e-5f;  // Small value to adjust for precision issues
+        const float epsilon = 1e-5f;  // Small value to adjust for precision issues...
         Vector3 result = new Vector3(
             Mathf.FloorToInt(hitPoint.x + epsilon),
             Mathf.FloorToInt(hitPoint.y + epsilon),
@@ -70,55 +82,63 @@ public class PlayerHand : MonoBehaviour
     }
     void DeactivateVoxel(RaycastHit hit, Vector3 voxelPosition)
     {
-        Debug.Log("Logged: " + voxelPosition);
-
         Chunk chunk = hit.collider.GetComponentInParent<Chunk>();
-        Voxel[] newVoxels = chunk.GetVoxelAt(voxelPosition);
-
-        if (chunk != null)
+        if (chunk == null)
         {
-            Debug.Log("newVoxles Len = " +  newVoxels.Length);
-            if (newVoxels.Length > 1)
-            {
-                foreach (Voxel voxel in newVoxels)
-                {
-                    Debug.Log("Testing Neighbour = " + voxel.position);
-                    if (voxel != null)
-                    {
-                        Vector3[] originVertices = voxel.GetOriginVertices();
-
-                        voxel.PrintOriginVertices();    
-
-                        int faceIdx = GetVoxelFaceIdx(originVertices, CalculateHitPoint(hit.point));
-                        Debug.Log("FaceID =  " + faceIdx);
-                        if (faceIdx != -1)
-                        {
-                            chunk.SetVoxelInactive(voxel.position);
-                            break;
-                        }
-                        /*
-                        else if(faceIdx == 0)
-                        {
-                            Vector3 deletePos = new Vector3(voxel.position.x, voxel.position.y - 1 , voxel.position.z);
-                            chunk.SetVoxelInactive(deletePos);
-                        }
-                        */
-                    }
-                }
-            }
-            else
-            {
-                chunk.SetVoxelInactive(newVoxels[0].position);
-            }    
+            return;
         }
-        else
+
+        Voxel[] voxels = chunk.GetVoxelAt(voxelPosition);
+
+        foreach (Voxel voxel in voxels)
         {
-            Debug.LogWarning("No Chunk component found.");
+            if (voxel == null) continue;
+
+            Vector3[] originVertices = voxel.GetOriginVertices();
+            int faceIdx = GetVoxelFaceIdx(originVertices, CalculateHitPoint(hit.point));
+
+            if (faceIdx != -1)
+            {
+                if (faceIdx == 1 && x_offset != 0)
+                {
+                    float topFaceMidY = (originVertices[2].x + originVertices[3].x) / 2.0f;
+
+                    Debug.Log("Big Vertice = " + originVertices[2]);
+                    Debug.Log("Small Vertice = " + originVertices[3]);
+                    Debug.Log("Hit = " + CalculateHitPoint(hit.point));
+
+
+                    if (CalculateHitPoint(hit.point).x >= topFaceMidY)
+                    {
+                        Debug.Log("Upper");
+                    }
+                    else
+                    {
+                        Debug.Log("Lower");
+                    }
+                    chunk.SetVoxelInactive(voxel.position);
+                    break;
+                }
+
+                chunk.SetVoxelInactive(voxel.position);
+                break;
+            }
+        }
+
+        if (voxels.Length == 1 && voxels[0] != null)
+        {
+            Vector3[] originVertices = voxels[0].GetOriginVertices();
+            int faceIdx = GetVoxelFaceIdx(originVertices, CalculateHitPoint(hit.point));
+
+            chunk.SetVoxelInactive(voxels[0].position);
         }
     }
+
+
+
     int GetVoxelFaceIdx(Vector3[] vertices, Vector3 point)
     {
-        Debug.Log("Points = " + point);
+        //Debug.Log("Points = " + point);
 
         int[][] faces = new int[][]
         {
@@ -146,11 +166,11 @@ public class PlayerHand : MonoBehaviour
             float minZ = Mathf.Min(v0.z, v1.z, v2.z, v3.z);
             float maxZ = Mathf.Max(v0.z, v1.z, v2.z, v3.z);
 
-            Debug.Log($"Checking face {i}:");
-            Debug.Log($"Point: {point}");
-            Debug.Log($"X range: {minX} to {maxX}");
-            Debug.Log($"Y range: {minY} to {maxY}");
-            Debug.Log($"Z range: {minZ} to {maxZ}");
+            //Debug.Log($"Checking face {i}:");
+            //Debug.Log($"Point: {point}");
+            //Debug.Log($"X range: {minX} to {maxX}");
+            //Debug.Log($"Y range: {minY} to {maxY}");
+            //Debug.Log($"Z range: {minZ} to {maxZ}");
 
             const float epsilon = 0.01f; // Small margin for error
 
